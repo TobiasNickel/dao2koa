@@ -1,0 +1,28 @@
+{
+  "name": "dao2koa",
+  "version": "0.0.1",
+  "description": "provide RESTful API for Mysql using tmysqlpromisedao + koa2",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TobiasNickel/dao2koa.git"
+  },
+  "keywords": [
+    "REST",
+    "API",
+    "dao"
+  ],
+  "author": "Tobias Nickel",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/TobiasNickel/dao2koa/issues"
+  },
+  "homepage": "https://github.com/TobiasNickel/dao2koa#readme",
+  "dependencies": {
+    "koa": "^1.2.4",
+    "koa-route": "^2.4.2"
+  }
+}

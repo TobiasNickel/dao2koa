@@ -1,0 +1,114 @@
+<h1 id="dao2koa">dao2koa</h1>
+<p>Automatic generated APIs are great. I am a big fan of projects like JSON-server and sails.js.
+The intend for this project is to set the koa development first. People learn how to use Koa,
+structure there app using koa-mount and koa-route.</p>
+<p>On the other hand I strongly believe in dao modules. Modules that access each a single collection
+on a database and provides standard methods to retrieve data from a resource.</p>
+<p>In first place this project is designed to use daos prepared by tmysqlpromisedao. A librarie to 
+provide dao-modules to access the mysqldatabase.</p>
+<ul>
+<li><strong>get</strong> functions to load entries by given values</li>
+<li><strong>save</strong> <em>insert</em> <em>remove</em> methods to manipulate the entries in that table.</li>
+<li><strong>fetch</strong> methods to load data from related collections and extending the given entries.</li>
+</ul>
+<p>Utilising these conventions dao2koa can provide a RESTful API not just for mysql but also for any
+other data resource that can be accessed through a dao.</p>
+<h2 id="usage">Usage</h2>
+<ol>
+<li>Install the <em>dao2koa</em> module to your koa application.</li>
+<li>Prepare your dao, following the conventions.</li>
+<li>generate a router using the only function exposed by this module and mount it to your app<pre><code class="lang-js"> var app = new Koa();
+ var apiRouter = dao2koa.daoToRestRouter(dao,{/*options*/});
+ app.use(mount(&#39;/endpoint/&#39;,apiRouter));
+</code></pre>
+</li>
+<li>start the app and access the endpoint.</li>
+</ol>
+<h2 id="exposed-api">exposed API</h2>
+<p>The generated API provides the following endpoints</p>
+<ul>
+<li><p><strong>GET /</strong> - list all using the dao&#39;s getAll methods</p>
+<ul>
+<li>queryParams:</li>
+<li>q=[word] for fulltext search (only using tmysqlpromisedao)</li>
+<li>_order=[fieldName] sort the result by the given field name</li>
+<li>_direction=[asc|desc] to order forward and backward</li>
+<li>_fetch=[fieldnames] commaseparated names, naming related data to extend the loaded<pre><code>                  Items using the dao&#39;s fetch methods
+</code></pre></li>
+<li>_page=[number] the page of the resultset you want to receive</li>
+<li>_pagesize=[number] how many items to receive</li>
+<li>[propname]=[modifier][value]<ul>
+<li>propname the name of the field</li>
+<li>value the value to compare with</li>
+<li>modifier:<ul>
+<li>no modifier: the value need to be equal to the given</li>
+<li>&lt; the value need to be lower</li>
+<li><blockquote>
+<p>the value need to be higher (alphabetic, numbers, dates)</p>
+</blockquote>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong>GET /:id</strong> - retrieve a single item by Id using the daos getById method.</p>
+</li>
+<li><p><strong>POST /</strong> or <strong>GET /create</strong> to create a new entry in the collection.<br>
+  uses the daos insert method to add a new item to the table.<br>
+  the items properties can be send using post or the URLs querystring<br></p>
+</li>
+<li><p><strong>PUT /:id/</strong> or <strong>GET /update/:id</strong> - to update an item<br>
+  uses the daos save method to update an entry of the table.<br>
+  the properties can be send using post or querystring<br></p>
+</li>
+<li><p><strong>DELETE /:id</strong> or <strong>GET /delete/:id</strong> to remove an item from the collection.</p>
+</li>
+</ul>
+<h2 id="options">Options</h2>
+<p>provinging an API which is that powerfull is very risky, but this API generator is meaned to be used
+in production. So there are serveral ways to implement authentication validation and trigger further
+methods like logging clearing related data, adding statistics and/or handle denormalization.</p>
+<p>Using dao2koa, you have two ways to change the generated API. One way is the direct way, as you would
+do it with any koa middleware. Handle the route before the API is utilized. Add logging and general 
+authentication, if fact anything you could imagine. Or implement yourself.</p>
+<p>The second is for convinienve. By passing an options object as second parameter to the <strong>daoToRestRouter</strong> -
+method. The options are:</p>
+<ul>
+<li><strong>inputFilter</strong> a function that takes (koaContext, newObjectprops, oldObject).<ul>
+<li>The context is always there. </li>
+<li>newObjectprops is there if the entry should get <strong>update</strong>d or is <strong>new</strong>.</li>
+<li>oldObject is the object before <strong>update</strong> or befor <strong>delete</strong>.<br>
+if this function return false, the optiation will not happen.</li>
+</ul>
+</li>
+<li><strong>outputFilter</strong> is a function to manipulate readed object before delivering it to the client.<ul>
+<li>context the koa context</li>
+<li>object the object the user has requested.
+return what ever the user should get.</li>
+</ul>
+</li>
+<li><strong>maxPageSize</strong> the maximum resultsize that the client can request. (int) default 100</li>
+<li><strong>defaultPageSize</strong> if the client is not providing a pagesize, in the query, he will get this one.</li>
+<li><strong>allowChangesOnGet</strong> allow to use the changes using just get requests. defaut true.
+  set this to false, to disable <strong>/create</strong>, <strong>/delete/:id</strong>, <strong>/update/:id</strong>  for get request</li>
+<li><strong>searchableFields</strong> array of fields that can be used for filters</li>
+<li><strong>fulltextFields</strong> array of fields that are used for fulltext search using the <strong>q</strong> parameter</li>
+<li><strong>fetchableFields</strong> array of related data that can be queried by the client. by the <strong>_fetch</strong> option.</li>
+<li><strong>defaultOrder</strong> the default order in search</li>
+</ul>
+<p>To have be most clear in your code and avoid looking to much for documentation copy the following
+object as options to <strong>daoToRestRouter</strong>.</p>
+<pre><code class="lang-js">{
+    inputFilter: async function(ctx,newObject, oldObject){return newObject;},
+    outputFilter: async function(ctx, object){return object;},
+    defaultOrder: undefined,// let database decide.
+    fetchableFields: [],
+    fulltextFields: [],
+    searchableFields: [],
+    defaultPageSize: 10,
+    maxPageSize: 100,
+    allowChangesOnGet: true
+}
+</code></pre>
