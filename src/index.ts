@@ -24,10 +24,10 @@ m.daoToRestRouter = function (dao, options) {
     const inputFilter = options.inputFilter || defaultFilter;
     const outputFilter = options.outputFilter || defaultFilter;
     const maxPageSize = parseInt(options.maxPageSize) || 10;
-    const defaultPageSize = options.pageSize || 10;
+    const defaultPageSize = parseInt(options.pageSize || 10);
     const searchableFields = options.searchableFields || ['id'];
     const fulltextFields = options.fillTextFields || searchableFields;
-    const fetchableFields = options.fetchableFields || [];
+    const fetchableFields = options.fetchableFields || getFetchableFields(getFetchableFields);
     const allowChangesOnGet = (options.allowChangesOnGet !== undefined) ? !!options.changeOnGet : true;
     const defaultOrder = options.defaultOrder || undefined;
     
@@ -118,9 +118,8 @@ m.daoToRestRouter = function (dao, options) {
         keys.forEach(function (key) {
             if (key[0] === '_') {
                 params[key] = query[key];
-            } else {
+            } else if(key!='q'){
                 queryProps.push(key);
-
             }
         });
         var pageSize = parseInt(params._pageSize) || defaultPageSize;
@@ -143,46 +142,15 @@ m.daoToRestRouter = function (dao, options) {
             //get all
             items = await dao.getAll(order, page, pageSize,ctx.connection);
         } else {
-            if (queryProps.length === 1 && queryProps[0] === 'q') {
-                // todo: fulltext
-                const searchString = '%' + query.q + '%';
-                const where = [];
-                const params = [];
-                fulltextFields.forEach(function (propName) {
-                    where.push(propName + ' LIKE ? ');
-                    params.push(searchString);
-                });
-                items = await dao.where(where.join(' OR '), params, order, page, pageSize,ctx.connection);
-            } else {
-                //property filter
-                queryProps = intersection(queryProps, searchableFields);
-                if (queryProps.length) {
-                    const where = [];
-                    const params = [];
-                    queryProps.forEach(function (propName) {
-                        const value = query[propName];
-                        const indicator = value[0];
-                        if (indicator === '>') {
-                            where.push(propName + ' > ?');
-                            params.push(value.substr(1));
-                        } else if (indicator === '<') {
-                            where.push(propName + ' < ?');
-                            params.push(value.substr(1));
-                        } else if (indicator === '!') {
-                            where.push(propName + ' <> ?');
-                            params.push(value.substr(1));
-                        } else {
-                            where.push(propName + ' = ?');
-                            params.push(value);
-                        }
-                    });
-                    //items = await dao.findWhere(queryPropValues, page, pageSize);
-                    items = await dao.where(where.join(' AND '), params, page, pageSize,ctx.connection);
-                } else {
-                    ctx.body = { message: 'no allowed parameter' };
-                    return;
-                }
+            var word = '';
+            if(query.q){
+                word = query.q;
             }
+            var filter = {};
+            queryProps.forEach(function(propName){
+                filter[propName] = query[propName];
+            });
+            items = await dao.search(word, filter, order, page, pageSize, ctx.connection);
         }
 
         const output = [];
@@ -260,4 +228,17 @@ function defaults(object,defaults){
             object[key] = defaults[key];
         }
     });
+}
+
+function getFetchableFields(dao){
+    console.assert(typeof dao === 'object');
+
+    var fields = [];
+    var keys = Object.keys(dao);
+    keys.forEach(function(key){
+        if(key.indexOf('fetch') !== 0) return;
+        var Name = key.substr(5);
+        fields.push(Name[0].toLowerCase()+Name.substr(1));
+    });
+    return fields;
 }
