@@ -1,6 +1,6 @@
 {
   "name": "dao2koa",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "provide RESTful API for Mysql using tmysqlpromisedao + koa2",
   "main": "src/index.js",
   "scripts": {
