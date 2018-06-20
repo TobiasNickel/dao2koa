@@ -79,7 +79,7 @@ m.daoToRestRouter = function (dao, options) {
      * @param {String} id
      */
     const getByIdHandler = async function (ctx, id) {
-        const item = await dao.getOneById(id,ctx.connection);
+            const item = await (dao.getOneById||dao.getOneBy_id)(id,ctx.connection);
         if (item) {
             ctx.body = await outputFilter(ctx, item);
         } else {
